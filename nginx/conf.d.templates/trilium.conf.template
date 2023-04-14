@@ -1,0 +1,54 @@
+
+
+server {
+    listen       80;
+    listen  [::]:80;
+    server_name  ${HOST_TRILIUM}.${SERVER_NAME};
+
+    access_log  /var/log/nginx/${HOST_TRILIUM}.80.access.log  main;
+    error_log  /var/log/nginx/${HOST_TRILIUM}.80.error.log  info;
+
+    if ($host = ${HOST_TRILIUM}.${SERVER_NAME}) {
+        return 301 https://$host$request_uri;
+    }
+
+    # redirect server error pages to the static page
+    error_page  404              /404.html;
+    location = /404.html {
+        root   /usr/share/nginx/html;
+    }
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+}
+
+server {
+    listen       443 ssl;
+    listen  [::]:443 ssl; #ipv6only=on
+    server_name  ${HOST_TRILIUM}.${SERVER_NAME};
+
+    access_log  /var/log/nginx/${HOST_TRILIUM}.443.access.log  main;
+    error_log  /var/log/nginx/${HOST_TRILIUM}.443.error.log  info;
+
+    ssl_certificate /etc/certs/${HOST_TRILIUM}.${SERVER_NAME}.crt;
+    ssl_certificate_key /etc/certs/${HOST_TRILIUM}.${SERVER_NAME}.key;
+    # ssl_dhparam /usr/shared/letsencrypt/certs/ssl-dhparams.pem;
+
+    location / {
+        proxy_pass ${BACKEND_TRILIUM};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # redirect server error pages to the static page
+    error_page  404              /404.html;
+    
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+}
+

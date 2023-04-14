@@ -1,0 +1,85 @@
+
+
+version: "2"
+
+services:
+
+  joplin-db:
+    image: postgres:13
+    container_name: joplin-db
+    volumes:
+     - ./joplin/data/postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+    environment:
+     - USER_UID=${USER_ID}
+     - USER_GID=${GROUP_ID}
+     - POSTGRES_PASSWORD=${DB_PASSWORD}
+     - POSTGRES_USER=joplin-user
+     - POSTGRES_DB=joplindb
+
+  joplin:
+    image: joplin/server:latest
+    container_name: joplin
+    depends_on:
+     - joplin-db
+    restart: unless-stopped
+    environment:
+     - USER_UID=${USER_ID}
+     - USER_GID=${GROUP_ID}
+     - APP_BASE_URL=https://joplin.localdev
+     - APP_PORT=8080
+     - DB_CLIENT=pg
+     - POSTGRES_PASSWORD=${DB_PASSWORD}
+     - POSTGRES_DATABASE=joplindb
+     - POSTGRES_USER=joplin-user
+     - POSTGRES_PORT=5432
+     - POSTGRES_HOST=joplin-db
+     - MAX_TIME_DRIFT=0
+
+  trilium:
+    image: zadam/trilium:0.59-latest
+    container_name: trilium
+    volumes:
+     - ./trilium/data:/home/node/trilium-data
+    environment:
+     - USER_UID=${USER_ID}
+     - USER_GID=${GROUP_ID}
+    restart: unless-stopped
+
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    volumes:
+     - ./vaultwarden/data:/data
+     - ./vaultwarden/.env:/.env
+    environment:
+     - USER_UID=${USER_ID}
+     - USER_GID=${GROUP_ID}
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+     - '80:80'
+     - '443:443'
+    volumes:
+     - ./nginx/conf.d.templates:/etc/nginx/templates:ro
+     - ./nginx/certs:/etc/certs:ro
+    environment:
+     - USER_UID=${USER_ID}
+     - USER_GID=${GROUP_ID}
+     - SERVER_NAME=localdev
+     - HOST_TRILIUM=trilium
+     - BACKEND_TRILIUM=http://trilium:8080
+     - HOST_JOPLIN=joplin
+     - BACKEND_JOPLIN=http://joplin:8080
+     - HOST_VAULT=vault
+     - BACKEND_VAULT=http://vaultwarden:80
+     - BACKEND_UPGRADE_VAULT=http://vaultwarden:3012
+    depends_on:
+     - trilium
+     - joplin
+     - vaultwarden
+    restart: unless-stopped
+
