@@ -13,12 +13,12 @@ services:
     environment:
      - USER_UID=${USER_ID}
      - USER_GID=${GROUP_ID}
-     - POSTGRES_PASSWORD=${DB_PASSWORD}
+     - POSTGRES_PASSWORD=${JOPLIN_DB_PASSWORD}
      - POSTGRES_USER=joplin-user
      - POSTGRES_DB=joplindb
 
   joplin:
-    image: joplin/server:latest
+    image: joplin/server:2.10.10-beta
     container_name: joplin
     depends_on:
      - joplin-db
@@ -26,10 +26,10 @@ services:
     environment:
      - USER_UID=${USER_ID}
      - USER_GID=${GROUP_ID}
-     - APP_BASE_URL=https://joplin.localdev
+     - APP_BASE_URL=https://${HOST_JOPLIN}.${SERVER_NAME}
      - APP_PORT=8080
      - DB_CLIENT=pg
-     - POSTGRES_PASSWORD=${DB_PASSWORD}
+     - POSTGRES_PASSWORD=${JOPLIN_DB_PASSWORD}
      - POSTGRES_DATABASE=joplindb
      - POSTGRES_USER=joplin-user
      - POSTGRES_PORT=5432
@@ -46,8 +46,8 @@ services:
      - USER_GID=${GROUP_ID}
     restart: unless-stopped
 
-  vaultwarden:
-    image: vaultwarden/server:latest
+  vault:
+    image: vaultwarden/server:1.28.1
     container_name: vaultwarden
     volumes:
      - ./vaultwarden/data:/data
@@ -58,7 +58,7 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: nginx:latest
+    image: nginx:1.23.4
     container_name: nginx
     ports:
      - '80:80'
@@ -69,17 +69,17 @@ services:
     environment:
      - USER_UID=${USER_ID}
      - USER_GID=${GROUP_ID}
-     - SERVER_NAME=localdev
-     - HOST_TRILIUM=trilium
-     - BACKEND_TRILIUM=http://trilium:8080
-     - HOST_JOPLIN=joplin
-     - BACKEND_JOPLIN=http://joplin:8080
-     - HOST_VAULT=vault
-     - BACKEND_VAULT=http://vaultwarden:80
-     - BACKEND_UPGRADE_VAULT=http://vaultwarden:3012
+     - SERVER_NAME=${SERVER_NAME}
+     - HOST_TRILIUM=${HOST_TRILIUM}
+     - BACKEND_TRILIUM=http://${HOST_TRILIUM}:8080
+     - HOST_JOPLIN=${HOST_JOPLIN}
+     - BACKEND_JOPLIN=http://${HOST_JOPLIN}:8080
+     - HOST_VAULT=${HOST_VAULT}
+     - BACKEND_VAULT=http://${HOST_VAULT}:80
+     - BACKEND_UPGRADE_VAULT=http://${HOST_VAULT}:3012
     depends_on:
-     - trilium
-     - joplin
-     - vaultwarden
+     - ${HOST_TRILIUM}
+     - ${HOST_JOPLIN}
+     - ${HOST_VAULT}
     restart: unless-stopped
 
