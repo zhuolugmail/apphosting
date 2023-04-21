@@ -57,6 +57,24 @@ services:
      - USER_GID=${GROUP_ID}
     restart: unless-stopped
 
+  nextcloud:
+    image: nextcloud/all-in-one:20230315_112022-latest
+    container_name: nextcloud-aio-mastercontainer
+    ports:
+     - '8080:8080'
+     - '3478:3478/tcp'
+     - '3478:3478/udp'
+    volumes:
+     - nextcloud_aio_mastercontainer:/mnt/docker-aio-config # not allowed to change
+     - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    environment:
+     - APACHE_PORT=11000
+     - APACHE_IP_BINDING=127.0.0.1
+
+     # - NEXTCLOUD_ENABLE_DRI_DEVICE=false
+     # - SKIP_DOMAIN_VALIDATION=true
+
   nginx:
     image: nginx:1.23.4
     container_name: nginx
@@ -77,9 +95,15 @@ services:
      - HOST_VAULT=${HOST_VAULT}
      - BACKEND_VAULT=http://${HOST_VAULT}:80
      - BACKEND_UPGRADE_VAULT=http://${HOST_VAULT}:3012
+     - HOST_NEXTCLOUD=${HOST_NEXTCLOUD}
     depends_on:
      - ${HOST_TRILIUM}
      - ${HOST_JOPLIN}
      - ${HOST_VAULT}
+     - ${HOST_NEXTCLOUD}
     restart: unless-stopped
+
+volumes:
+  nextcloud_aio_mastercontainer:
+    name: nextcloud_aio_mastercontainer # This line is not allowed to be changed
 
